@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ghostbuild"
+dynamic = ["version"]
+description = "Reproducible build verification: build it twice, know what changed."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "LocalGhosters" }]
+keywords = ["reproducible-builds", "build", "verification", "supply-chain", "packaging"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Build Tools",
+    "Typing :: Typed",
+]
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.0",
+    "tomli>=2.0; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "build>=1.0",
+]
+
+[project.scripts]
+ghostbuild = "ghostbuild.cli:app"
+
+# Placeholder URLs: update once the public repository exists.
+[project.urls]
+Homepage = "https://github.com/LocalGhosters/ghostbuild"
+Documentation = "https://github.com/LocalGhosters/ghostbuild/tree/main/docs"
+Issues = "https://github.com/LocalGhosters/ghostbuild/issues"
+Changelog = "https://github.com/LocalGhosters/ghostbuild/blob/main/CHANGELOG.md"
+
+[tool.setuptools.dynamic]
+version = { attr = "ghostbuild.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["ghostbuild*"]
+
+[tool.setuptools.package-data]
+ghostbuild = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

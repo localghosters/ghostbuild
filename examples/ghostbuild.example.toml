@@ -1,0 +1,41 @@
+# GhostBuild configuration. Every setting is optional; the values below are the defaults.
+
+[build]
+# Maximum time for each build, in seconds.
+timeout_seconds = 900
+# Extra environment variable names to pass to builds. Builds otherwise run with a
+# small allowlist (PATH, HOME, locale, proxy and CA settings). Values are never
+# written to reports.
+env_passthrough = []
+
+[artifacts]
+# Glob patterns, relative to each build's output directory.
+patterns = ["*.whl", "*.tar.gz"]
+
+[comparison]
+# Only "exact" (SHA-256 of every artifact) is implemented in 0.1.0.
+policy = "exact"
+
+[workspace]
+# Directory for temporary workspaces. Empty means the system temporary directory.
+temp_dir = ""
+# Copy version-control metadata (.git, .hg, .svn) into build workspaces.
+# Needed by tools such as setuptools-scm; off by default.
+include_vcs = false
+# Extra file or directory name patterns to leave out of build workspaces
+# (matched against names at any depth).
+exclude = []
+
+[report]
+output_dir = "ghostbuild-results"
+# "terminal", "json" or "html". result.json is always written.
+format = "terminal"
+
+[python]
+# Override the build command. Placeholders: {python}, {source_dir}, {outdir}.
+# Only usable with local isolation. Empty means: python -m build --sdist --wheel
+build_command = []
+# Docker image for the independent rebuild. Empty means python:<major>.<minor>-slim.
+docker_image = ""
+# Requirement installed inside the container to provide the build frontend.
+build_requirement = "build"
