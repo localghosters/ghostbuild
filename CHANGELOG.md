@@ -4,6 +4,13 @@ All notable changes are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Comparison diagnostics: when every archive member has identical content and only
+  metadata differs, the report now says so (and that it is still not an exact match).
+- Hedged hypotheses for differing file permissions and file ownership in archives.
+
 ## [0.1.0] - 2026-11-12
 
 First release. A small, working foundation.
