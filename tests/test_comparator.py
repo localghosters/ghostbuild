@@ -196,3 +196,48 @@ def test_verdict_inconclusive_when_a_build_failed_or_rebuild_missing():
 def test_one_sided_empty_comparison_is_inconclusive():
     verdict, _ = determine_verdict(compare_artifact_sets([art("a.whl", "1")], []))
     assert verdict is Verdict.INCONCLUSIVE
+
+
+def _zip_with_mode(path, files, mode):
+    """Write a wheel-like zip whose members all carry the given Unix mode."""
+    import zipfile
+
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        for name, content in files.items():
+            info = zipfile.ZipInfo(name, date_time=(2020, 1, 1, 0, 0, 0))
+            info.external_attr = mode << 16
+            archive.writestr(info, content)
+    return path
+
+
+def test_metadata_only_difference_is_observed_but_not_an_exact_match(tmp_path):
+    art = one(tmp_path, "p.whl", WHEEL_FILES, WHEEL_FILES, date_b=(2021, 5, 5, 5, 5, 4)).artifacts[0]
+    assert art.status is ArtifactStatus.DIFFERENT
+    observation = next(h for h in art.hypotheses if h.startswith("Observation"))
+    assert "identical content" in observation and "timestamp" in observation
+    assert "not an exact match" in observation
+
+
+def test_content_difference_gets_no_metadata_only_observation(tmp_path):
+    changed = {**WHEEL_FILES, "pkg/__init__.py": "VALUE = 2\n"}
+    art = one(tmp_path, "p.whl", WHEEL_FILES, changed).artifacts[0]
+    assert not any(h.startswith("Observation") for h in art.hypotheses)
+
+
+def test_one_sided_member_gets_no_metadata_only_observation(tmp_path):
+    extra = {**WHEEL_FILES, "pkg/generated.py": "X = 1\n"}
+    art = one(tmp_path, "p.whl", WHEEL_FILES, extra).artifacts[0]
+    assert not any(h.startswith("Observation") for h in art.hypotheses)
+
+
+def test_permission_difference_produces_hedged_mode_hypothesis(tmp_path):
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    a = artifact(_zip_with_mode(tmp_path / "a" / "p.whl", WHEEL_FILES, 0o644))
+    b = artifact(_zip_with_mode(tmp_path / "b" / "p.whl", WHEEL_FILES, 0o755))
+    art = compare_artifact_sets([a], [b]).artifacts[0]
+    assert art.status is ArtifactStatus.DIFFERENT
+    assert all("mode" in d.metadata_changes for d in art.file_differences)
+    mode_hypothesis = next(h for h in art.hypotheses if "permissions" in h)
+    assert "may" in mode_hypothesis
+    assert not any(w in mode_hypothesis.lower() for w in ("caused by", "the cause is", "proves"))
