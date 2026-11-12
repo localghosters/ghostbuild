@@ -267,6 +267,13 @@ def _hypotheses(comparison: ArtifactComparison, environment_differences: Sequenc
     one_sided = [d for d in diffs if d.change.startswith("only-in")]
     hypotheses: list[str] = []
 
+    if diffs and not content and not one_sided:
+        kinds = sorted({kind for d in diffs for kind in d.metadata_changes})
+        hypotheses.append(
+            "Observation: every compared member has identical content; the differences are "
+            "limited to archive metadata (" + (", ".join(kinds) or "member order") + "). "
+            "The artifacts are still not byte-identical, so this is not an exact match."
+        )
     if any("timestamp" in d.metadata_changes for d in diffs):
         hypotheses.append(
             "Archive entry timestamps differ. The build may be embedding the build time or file "
@@ -277,6 +284,16 @@ def _hypotheses(comparison: ArtifactComparison, environment_differences: Sequenc
         hypotheses.append(
             "The gzip header timestamp differs. It may be written from the current time at "
             "build time rather than from a fixed value."
+        )
+    if any("mode" in d.metadata_changes for d in diffs):
+        hypotheses.append(
+            "File permissions differ between builds. They may come from a different umask or "
+            "from file modes in the source checkout, rather than from the build itself."
+        )
+    if any("owner" in d.metadata_changes for d in diffs):
+        hypotheses.append(
+            "File ownership recorded in the archive differs. The builds may have run as "
+            "different users or in environments that record owners differently."
         )
     if comparison.member_order_differs:
         hypotheses.append(
