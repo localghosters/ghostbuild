@@ -241,3 +241,35 @@ def test_permission_difference_produces_hedged_mode_hypothesis(tmp_path):
     mode_hypothesis = next(h for h in art.hypotheses if "permissions" in h)
     assert "may" in mode_hypothesis
     assert not any(w in mode_hypothesis.lower() for w in ("caused by", "the cause is", "proves"))
+
+
+def _targz_with_owner(path, files, uname):
+    """Write a .tar.gz whose members record the given owner name."""
+    import gzip
+    import io
+    import tarfile
+
+    raw = io.BytesIO()
+    with tarfile.open(fileobj=raw, mode="w", format=tarfile.PAX_FORMAT) as archive:
+        for name, content in files.items():
+            data = content.encode()
+            info = tarfile.TarInfo(name)
+            info.size, info.mtime, info.mode, info.uname = len(data), 1_600_000_000, 0o644, uname
+            archive.addfile(info, io.BytesIO(data))
+    with gzip.GzipFile(path, "wb", mtime=0) as handle:
+        handle.write(raw.getvalue())
+    return path
+
+
+def test_owner_difference_produces_hedged_ownership_hypothesis(tmp_path):
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    files = {"pkg-1.0/PKG-INFO": "Name: pkg\n"}
+    a = artifact(_targz_with_owner(tmp_path / "a" / "pkg-1.0.tar.gz", files, "alice"))
+    b = artifact(_targz_with_owner(tmp_path / "b" / "pkg-1.0.tar.gz", files, "builder"))
+    art = compare_artifact_sets([a], [b]).artifacts[0]
+    assert art.status is ArtifactStatus.DIFFERENT
+    assert all("owner" in d.metadata_changes for d in art.file_differences)
+    owner_hypothesis = next(h for h in art.hypotheses if "ownership" in h)
+    assert "may" in owner_hypothesis
+    assert not any(w in owner_hypothesis.lower() for w in ("caused by", "the cause is", "proves"))
