@@ -40,6 +40,18 @@ Python projects with a `pyproject.toml` or `setup.py`. See
 No. There is no telemetry and no account. The Docker rebuild downloads build tools
 inside the container, which is network access made by pip, not by GhostBuild.
 
+## What does `--source-date-epoch` do, and does it make my build reproducible?
+
+It sets `SOURCE_DATE_EPOCH` to the same value for both builds (also inside Docker). Many
+build tools use it instead of the current time when writing timestamps. GhostBuild never
+turns it on by itself, and any result obtained with it says so, because a match then shows
+the project reproduces with timestamps pinned, not that it does without.
+
+It only helps if the build tool honours it. In a test with the sample project and
+setuptools 84.0.0, pinning it made the wheels match exactly, but the sdist still differed
+(gzip header and member timestamps). The report listed those exact differences. Results
+depend on the tool and its version.
+
 ## Why do my wheels differ?
 
 Check the "Internal differences" and hypotheses in the report. Common causes are

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from conftest import WHEEL_FILES, make_targz, make_zip
+from conftest import WHEEL_FILES, make_targz, make_zip, symlink_or_skip
 from ghostbuild.engine.artifacts import classify_artifact, copy_artifacts, discover_artifacts
 from ghostbuild.errors import PathError
 from ghostbuild.utils.hashing import sha256_bytes
@@ -34,7 +34,7 @@ def test_custom_patterns_and_subdirectories(tmp_path):
 
 def test_symlinks_and_directories_are_ignored(tmp_path):
     real = make_zip(tmp_path / "real.whl", {"a": "b"})
-    (tmp_path / "link.whl").symlink_to(real)
+    symlink_or_skip(tmp_path / "link.whl", real)
     (tmp_path / "dir.whl").mkdir()
     assert [a.name for a in discover_artifacts(tmp_path, ["*.whl"])] == ["real.whl"]
 

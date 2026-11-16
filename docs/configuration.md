@@ -15,6 +15,7 @@ Unknown keys and invalid values are reported as errors rather than ignored.
 | --- | --- | --- | --- |
 | `[build]` | `timeout_seconds` | `900` | Per-build timeout. |
 | `[build]` | `env_passthrough` | `[]` | Extra environment variable names passed to builds. Values are never reported. Secret-looking names trigger a warning. |
+| `[build]` | `source_date_epoch` | unset | Fixed `SOURCE_DATE_EPOCH` (seconds since 1970, 0 to 4102444800) set for both builds, also in Docker. Reports state that it was pinned. |
 | `[artifacts]` | `patterns` | `["*.whl", "*.tar.gz"]` | Glob patterns for artifacts in each build's output directory. |
 | `[comparison]` | `policy` | `"exact"` | Only `exact` is implemented. |
 | `[workspace]` | `temp_dir` | `""` | Where temporary workspaces go; empty uses the system temp directory. |
@@ -26,4 +27,4 @@ Unknown keys and invalid values are reported as errors rather than ignored.
 | `[python]` | `docker_image` | `""` | Image for the Docker rebuild; empty means `python:<major>.<minor>-slim`. |
 | `[python]` | `build_requirement` | `"build"` | Requirement installed in the container to provide the build frontend. |
 
-Command-line options (`--output`, `--format`, `--timeout`) override the file.
+Command-line options (`--output`, `--format`, `--timeout`, `--source-date-epoch`) override the file.

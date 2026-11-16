@@ -85,3 +85,19 @@ def test_malformed_toml(tmp_path):
 def test_empty_string_means_unset_for_optional_settings(tmp_path):
     config = load_config(write(tmp_path, '[workspace]\ntemp_dir = ""\n[python]\ndocker_image = ""\n'))
     assert config.workspace.temp_dir is None and config.python.docker_image is None
+
+
+def test_source_date_epoch_is_unset_by_default_and_parsed_when_given(tmp_path):
+    assert load_config(None, tmp_path).build.source_date_epoch is None
+    config = load_config(write(tmp_path, "[build]\nsource_date_epoch = 1700000000\n"), tmp_path)
+    assert config.build.source_date_epoch == 1700000000
+
+
+@pytest.mark.parametrize("value", ["-1", "4102444801", '"1700000000"', "true", "1.5"])
+def test_invalid_source_date_epoch_is_rejected(tmp_path, value):
+    with pytest.raises(ConfigError, match="source_date_epoch"):
+        load_config(write(tmp_path, f"[build]\nsource_date_epoch = {value}\n"), tmp_path)
+
+
+def test_example_config_documents_source_date_epoch_without_enabling_it():
+    assert "# source_date_epoch = " in EXAMPLE_CONFIG

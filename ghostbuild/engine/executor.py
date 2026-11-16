@@ -6,6 +6,7 @@ Commands are always argument lists; nothing here ever uses ``shell=True``.
 from __future__ import annotations
 
 import os
+import re
 import signal
 import subprocess
 import time
@@ -16,6 +17,7 @@ from pathlib import Path
 
 from ghostbuild.errors import IsolationError
 
+_ENV_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 MAX_OUTPUT_CHARS = 1_000_000
 _KILL_GRACE_SECONDS = 10
 
@@ -126,11 +128,14 @@ def docker_run_command(
     output_dir: Path,
     script: str,
     user: str | None,
+    env: Mapping[str, str] | None = None,
 ) -> list[str]:
     """Build the ``docker run`` argument list for an isolated rebuild.
 
     The source is mounted read-only, capabilities are dropped, and the script is
     passed to ``sh -c`` *inside the container* (the host never uses a shell).
+    ``env`` holds explicit variables to set in the container (the host environment is
+    never forwarded).
     """
     for path in (source_dir, output_dir):
         if "," in str(path):
@@ -142,6 +147,10 @@ def docker_run_command(
     ]  # fmt: skip
     if user:
         command += ["--user", user]
+    for name, value in sorted((env or {}).items()):
+        if not _ENV_NAME.match(name) or "\n" in value or "\0" in value:
+            raise IsolationError(f"Refusing to pass an unsafe environment variable to Docker: {name!r}")
+        command += ["--env", f"{name}={value}"]
     command += [
         "--mount", f"type=bind,source={source_dir},target=/src,readonly",
         "--mount", f"type=bind,source={output_dir},target=/out",

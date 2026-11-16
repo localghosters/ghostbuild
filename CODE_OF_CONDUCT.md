@@ -22,8 +22,8 @@ other channel run for the project.
 
 Maintainers may edit or remove comments, close threads, or block people who
 break these rules. To report a problem, open a private security/conduct report
-through the repository's "Report" feature on GitHub, or contact the maintainers
-at the address listed on the repository once one is published.
+through GitHub's private reporting on the repository, or contact the maintainers
+at the address listed on the repository.
 
 This Code of Conduct is adapted in spirit from the
 [Contributor Covenant](https://www.contributor-covenant.org/), version 2.1.

@@ -209,3 +209,43 @@ def test_compare_directories_with_nothing_to_compare_is_inconclusive(tmp_path):
     a, b = tmp_path / "a", tmp_path / "b"
     a.mkdir(), b.mkdir()
     assert compare_directories(a, b, Config()).verdict is Verdict.INCONCLUSIVE
+
+
+def test_source_date_epoch_is_set_for_both_local_builds_and_disclosed(setup):
+    _, _, config, run = setup
+    config.build.source_date_epoch = 1700000000
+    runner = FakeRunner(identical_artifacts)
+    result = run(runner)
+    builds = [c for c in runner.calls if "fakebuild" in c["command"]]
+    assert len(builds) == 2
+    assert all(c["env"]["SOURCE_DATE_EPOCH"] == "1700000000" for c in builds)
+    assert result.verdict is Verdict.REPRODUCIBLE
+    assert any("SOURCE_DATE_EPOCH was fixed to 1700000000" in r for r in result.verdict_reasons)
+    assert any("not that it does without it" in w for w in result.warnings)
+
+
+def test_source_date_epoch_is_not_set_unless_configured(setup):
+    _, _, _, run = setup
+    runner = FakeRunner(identical_artifacts)
+    result = run(runner)
+    assert all("SOURCE_DATE_EPOCH" not in c["env"] for c in runner.calls)
+    assert not any("SOURCE_DATE_EPOCH" in r for r in result.verdict_reasons)
+
+
+def test_source_date_epoch_reaches_the_docker_rebuild(setup, monkeypatch):
+    _, _, config, run = setup
+    config.python.build_command = []
+    config.python.docker_image = "python:3.12-slim"
+    config.build.source_date_epoch = 1700000000
+    monkeypatch.setattr(PythonAdapter, "missing_prerequisites", lambda self, cfg: [])
+    runner = FakeRunner(identical_artifacts)
+    run(runner, mode="docker")
+    run_call = next(c["command"] for c in runner.calls if c["command"][:2] == ["docker", "run"])
+    assert run_call[run_call.index("--env") + 1] == "SOURCE_DATE_EPOCH=1700000000"
+
+
+def test_pinned_epoch_does_not_hide_a_real_difference(setup):
+    _, _, config, run = setup
+    config.build.source_date_epoch = 1700000000
+    result = run(FakeRunner(differing_artifacts))
+    assert result.verdict is Verdict.NON_REPRODUCIBLE

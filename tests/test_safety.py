@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import make_targz, make_zip
+from conftest import make_targz, make_zip, symlink_or_skip
 from ghostbuild.config import Config
 from ghostbuild.engine.archives import read_archive
 from ghostbuild.engine.executor import docker_run_command, run_command
@@ -197,7 +197,7 @@ def test_build_env_rejects_invalid_passthrough_names():
 
 def test_redaction_removes_secret_values_and_url_credentials():
     environ = {"MY_TOKEN": "s3cr3t-value-123", "PATH": "/usr/bin", "SHORT_SECRET": "ab"}
-    text = "token=s3cr3t-value-123 index https://user:hunter2@pypi.example/simple path /usr/bin ab" # secretshield: ignore
+    text = "token=s3cr3t-value-123 index https://user:hunter2@pypi.example/simple path /usr/bin ab"
     cleaned = redact_secrets(text, environ)
     assert "s3cr3t-value-123" not in cleaned and "hunter2" not in cleaned
     assert "/usr/bin" in cleaned and "pypi.example" in cleaned
@@ -236,7 +236,7 @@ def test_refuses_to_delete_directories_it_did_not_create(tmp_path):
     with pytest.raises(UnsafeDeletionError):
         remove_workspace(other)  # marker, wrong prefix
     link = tmp_path / "ghostbuild-link"
-    link.symlink_to(precious)
+    symlink_or_skip(link, precious)
     with pytest.raises(UnsafeDeletionError):
         remove_workspace(link)
     assert (precious / "data.txt").read_text() == "keep me"
@@ -269,7 +269,7 @@ def test_copy_source_can_include_vcs_and_does_not_follow_symlinks(tmp_path):
     (project / ".git").mkdir()
     outside = tmp_path / "outside.txt"
     outside.write_text("secret")
-    (project / "link").symlink_to(outside)
+    symlink_or_skip(project / "link", outside)
     copy_source(project, tmp_path / "copy", include_vcs=True)
     assert (tmp_path / "copy" / ".git").is_dir()
     assert (tmp_path / "copy" / "link").is_symlink()
@@ -360,3 +360,24 @@ def test_temp_dir_setting_must_exist(tmp_path):
     with pytest.raises(PathError):
         Workspace(tmp_path / "missing")
     assert Config().workspace.temp_dir is None
+
+
+def test_docker_command_passes_only_explicit_environment(tmp_path, monkeypatch):
+    monkeypatch.setenv("DEPLOY_TOKEN", "s3cr3t-value-123")
+    command = docker_run_command(
+        image="i", source_dir=tmp_path / "src", output_dir=tmp_path / "out", script="x",
+        user=None, env={"SOURCE_DATE_EPOCH": "1700000000"},
+    )  # fmt: skip
+    assert command[command.index("--env") + 1] == "SOURCE_DATE_EPOCH=1700000000"
+    assert command.count("--env") == 1
+    assert "s3cr3t-value-123" not in " ".join(command)  # host environment is never forwarded
+    assert command.index("--env") < command.index("i")  # options come before the image
+
+
+@pytest.mark.parametrize("name, value", [("BAD NAME", "1"), ("1ABC", "1"), ("A=B", "1"), ("OK", "a\nb")])
+def test_docker_command_rejects_unsafe_environment(tmp_path, name, value):
+    with pytest.raises(IsolationError):
+        docker_run_command(
+            image="i", source_dir=tmp_path / "src", output_dir=tmp_path / "out", script="x",
+            user=None, env={name: value},
+        )  # fmt: skip

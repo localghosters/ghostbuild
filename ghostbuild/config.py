@@ -30,6 +30,11 @@ timeout_seconds = 900
 # small allowlist (PATH, HOME, locale, proxy and CA settings). Values are never
 # written to reports.
 env_passthrough = []
+# Fixed SOURCE_DATE_EPOCH (seconds since 1970-01-01 UTC), set for BOTH builds. Many build
+# tools use it instead of the current time when writing timestamps into archives.
+# A result obtained with this set shows the project reproduces when timestamps are
+# pinned, not that it does without it; reports say so. Unset by default.
+# source_date_epoch = 1700000000
 
 [artifacts]
 # Glob patterns, relative to each build's output directory.
@@ -69,6 +74,7 @@ build_requirement = "build"
 class BuildSettings:
     timeout_seconds: int = 900
     env_passthrough: list[str] = field(default_factory=list)
+    source_date_epoch: int | None = None
 
 
 @dataclass
@@ -141,7 +147,7 @@ _KINDS = {
 
 # section -> key -> kind
 _SCHEMA: dict[str, dict[str, str]] = {
-    "build": {"timeout_seconds": "int", "env_passthrough": "strlist"},
+    "build": {"timeout_seconds": "int", "env_passthrough": "strlist", "source_date_epoch": "int"},
     "artifacts": {"patterns": "strlist"},
     "comparison": {"policy": "str"},
     "workspace": {"temp_dir": "str", "include_vcs": "bool", "exclude": "strlist"},
@@ -184,9 +190,19 @@ def parse_config(data: dict[str, Any], source: Path | None = None) -> Config:
     return config
 
 
+MAX_SOURCE_DATE_EPOCH = 4_102_444_800  # 2100-01-01 UTC
+
+
+def validate_source_date_epoch(value: int | None, label: str) -> None:
+    """Reject a SOURCE_DATE_EPOCH that is negative or implausibly far in the future."""
+    if value is not None and not 0 <= value <= MAX_SOURCE_DATE_EPOCH:
+        raise ConfigError(f"{label} must be between 0 and {MAX_SOURCE_DATE_EPOCH} (seconds since the epoch).")
+
+
 def _validate(config: Config, where: str) -> None:
     if not 1 <= config.build.timeout_seconds <= 86400:
         raise ConfigError(f"[build] timeout_seconds{where} must be between 1 and 86400.")
+    validate_source_date_epoch(config.build.source_date_epoch, f"[build] source_date_epoch{where}")
     for name in config.build.env_passthrough:
         if not _ENV_NAME.match(name):
             raise ConfigError(f"[build] env_passthrough{where}: invalid variable name {name!r}.")

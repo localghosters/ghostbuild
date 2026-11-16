@@ -1,4 +1,4 @@
-# GhostBuild        [![SecretShield](https://github.com/localghosters/ghostbuild/actions/workflows/secretshield.yml/badge.svg)](https://github.com/localghosters/ghostbuild/actions/workflows/secretshield.yml)
+# GhostBuild
 
 **Build it twice. Know what changed.**
 
@@ -6,7 +6,7 @@ GhostBuild is a local-first command-line tool that independently rebuilds a soft
 project and compares the resulting artifacts, so you can see whether your build is
 reproducible and, if not, which files differ.
 
-> **Status: 0.2.0, early.** Only Python projects are supported. Not yet published on PyPI.
+> **Status: 0.3.0, early.** Only Python projects are supported.
 
 ## Why it exists
 
@@ -36,13 +36,14 @@ Verdicts:
 - Python projects: setuptools, Hatch, Poetry, PDM (and Flit) detected via `pyproject.toml`; legacy `setup.py` projects too.
 - Wheel and sdist artifacts, compared by SHA-256.
 - For differing archives: per-member differences, timestamp/mode metadata, wheel `WHEEL`/`METADATA` fields, and hypotheses clearly labelled as unconfirmed.
+- Optional `SOURCE_DATE_EPOCH` pinning for both builds, always disclosed in the report.
 - Docker isolation, with a same-host fallback that needs explicit approval and is labelled in every report.
 - Terminal, JSON, Markdown and self-contained HTML reports.
 - Optional `ghostbuild.toml`. No accounts, no API keys, no telemetry.
 
 ## Installation
 
-Once published:
+From PyPI:
 
 ```bash
 pip install ghostbuild
@@ -65,6 +66,7 @@ Requires Python 3.10+. Docker is optional but recommended for independent rebuil
 ghostbuild scan ./my-project          # inspect only, runs nothing
 ghostbuild verify ./my-project        # asks before running the build
 ghostbuild verify ./my-project --format html --output ./results
+ghostbuild verify ./my-project --source-date-epoch 1700000000   # pin archive timestamps
 ghostbuild compare ./build-one ./build-two
 ghostbuild compare ./build-one ./build-two --format markdown >> "$GITHUB_STEP_SUMMARY"
 ghostbuild report ./ghostbuild-results/
@@ -76,7 +78,7 @@ ghostbuild report ./ghostbuild-results/
 | --- | --- |
 | `ghostbuild` | Banner, version and examples. |
 | `ghostbuild scan [DIR]` | Show name, version, build system, config files, build requirements, available tools. Never builds. |
-| `ghostbuild verify [DIR]` | Full workflow. Options: `--output`, `--format terminal\|json\|html\|markdown`, `--keep-artifacts`, `--isolation auto\|docker\|local`, `--yes`, `--timeout`, `--config`, `--verbose`, `--no-color`. |
+| `ghostbuild verify [DIR]` | Full workflow. Options: `--output`, `--format terminal\|json\|html\|markdown`, `--keep-artifacts`, `--isolation auto\|docker\|local`, `--yes`, `--timeout`, `--source-date-epoch`, `--config`, `--verbose`, `--no-color`. |
 | `ghostbuild compare A B` | Compare two existing artifact directories. Runs no builds. |
 | `ghostbuild report [PATH]` | Display or regenerate a report from a stored `result.json`. |
 | `ghostbuild init [PATH]` | Write an example `ghostbuild.toml`. |

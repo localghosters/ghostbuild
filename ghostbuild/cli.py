@@ -166,7 +166,10 @@ def _choose_isolation(requested: str, docker: DockerStatus, err: Console) -> str
         return resolve_isolation(requested, docker, local_approved=True)
 
 
-def _present_plan(err: Console, project_dir: Path, command: list[str], mode: str, image: str | None) -> None:
+def _present_plan(
+    err: Console, project_dir: Path, command: list[str], mode: str, image: str | None,
+    source_date_epoch: int | None = None,
+) -> None:  # fmt: skip
     err.print(Text("\nBuild plan", style="bold"))
     err.print(Text(f"  Project: {project_dir}"))
     err.print(Text(f"  Original build: runs on this host in a temporary copy: {shlex.join(command)}"))
@@ -175,6 +178,9 @@ def _present_plan(err: Console, project_dir: Path, command: list[str], mode: str
     else:
         err.print(Text("  Independent rebuild: runs on this host in a second temporary copy (LOCAL, weaker isolation)",
                        style="yellow"))  # fmt: skip
+    if source_date_epoch is not None:
+        err.print(Text(f"  SOURCE_DATE_EPOCH={source_date_epoch} will be set for both builds "
+                       "(timestamps pinned; the report will say so)."))  # fmt: skip
     err.print(Text("  Your project directory is only read, never modified.", style="dim"))
     err.print(Text("  WARNING: building runs code from this project (build backend, setup.py, hooks).",
                    style="bold yellow"))  # fmt: skip
@@ -199,6 +205,11 @@ def verify(
         bool, typer.Option("--yes", "-y", help="Approve running the project's build without prompting.")
     ] = False,
     timeout: Annotated[Optional[int], typer.Option(help="Per-build timeout in seconds.", min=1)] = None,
+    source_date_epoch: Annotated[
+        Optional[int],
+        typer.Option("--source-date-epoch", min=0,
+                     help="Set SOURCE_DATE_EPOCH to this value for both builds (seconds since the epoch)."),
+    ] = None,
     config_path: ConfigOption = None,
     verbose: VerboseOption = False,
     no_color: NoColorOption = False,
@@ -216,6 +227,8 @@ def verify(
     with _handle_errors(err):
         root = validate_directory(project_dir, "project directory")
         config = load_config(config_path, root)
+        if source_date_epoch is not None:
+            config.build.source_date_epoch = source_date_epoch
         fmt = fmt or config.report.format
         output_dir = (output or Path(config.report.output_dir)).resolve()
         _check_output_dir(output_dir, keep_artifacts)
@@ -226,7 +239,7 @@ def verify(
         mode = _choose_isolation(isolation, detect_docker(), err)
         image = adapter.container_image(config) if mode == "docker" else None
         command = adapter.build_command(Path("<source>"), Path("<output>"), config)
-        _present_plan(err, root, command, mode, image)
+        _present_plan(err, root, command, mode, image, config.build.source_date_epoch)
         if not yes:
             if not _interactive():
                 raise GhostBuildError(

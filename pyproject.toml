@@ -41,7 +41,6 @@ dev = [
 [project.scripts]
 ghostbuild = "ghostbuild.cli:app"
 
-# Placeholder URLs: update once the public repository exists.
 [project.urls]
 Homepage = "https://github.com/LocalGhosters/ghostbuild"
 Documentation = "https://github.com/LocalGhosters/ghostbuild/tree/main/docs"

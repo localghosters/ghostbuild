@@ -4,6 +4,22 @@ All notable changes are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-11-16
+
+### Added
+- `--source-date-epoch` option and `[build] source_date_epoch` setting: sets
+  `SOURCE_DATE_EPOCH` identically for both builds (local and Docker). Reports disclose
+  when it was pinned and what a match then means.
+- Docker commands can carry an explicit, validated set of environment variables; the
+  host environment is still never forwarded.
+
+### Fixed
+- Tests that create symlinks are skipped on systems where symlinks are unavailable
+  (for example Windows without privileges) instead of failing.
+
+### Changed
+- Documentation no longer carries pre-release wording.
+
 ## [0.2.0] - 2026-11-16
 
 ### Added

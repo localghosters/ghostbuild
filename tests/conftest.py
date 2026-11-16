@@ -157,6 +157,14 @@ def differing_artifacts(number: int, output_dir: Path) -> None:
     make_targz(output_dir / "pkg-1.0.tar.gz", {"pkg-1.0/PKG-INFO": "Name: pkg\n"})
 
 
+def symlink_or_skip(link: Path, target: Path) -> None:
+    """Create ``link`` -> ``target``, skipping the test where symlinks are unavailable (e.g. Windows)."""
+    try:
+        link.symlink_to(target)
+    except (OSError, NotImplementedError) as exc:
+        pytest.skip(f"symlinks are not available here: {exc}")
+
+
 @pytest.fixture
 def python_exe() -> str:
     return sys.executable

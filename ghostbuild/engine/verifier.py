@@ -11,7 +11,7 @@ from pathlib import Path
 
 from ghostbuild import __version__
 from ghostbuild.adapters.base import BuildAdapter
-from ghostbuild.config import Config
+from ghostbuild.config import Config, validate_source_date_epoch
 from ghostbuild.engine.artifacts import copy_artifacts, discover_artifacts
 from ghostbuild.engine.comparator import compare_artifact_sets, determine_verdict
 from ghostbuild.engine.executor import CommandResult, docker_run_command, run_command
@@ -143,6 +143,7 @@ def _build_in_docker(
     timeout: float,
     pull_error: str | None,
     warnings: list[str],
+    container_env: Mapping[str, str] | None = None,
 ) -> BuildRecord:
     user = f"{os.getuid()}:{os.getgid()}" if hasattr(os, "getuid") else None
     command = docker_run_command(
@@ -151,6 +152,7 @@ def _build_in_docker(
         output_dir=dirs.output,
         script=adapter.container_script(config),
         user=user,
+        env=container_env,
     )
     if pull_error:
         result = CommandResult(command, None, "", "", _now(), 0.0, error=pull_error)
@@ -216,6 +218,16 @@ def verify_project(
         warnings.append(_LOCAL_REBUILD_WARNING)
 
     env = build_env(config.build.env_passthrough)
+    container_env: dict[str, str] = {}
+    epoch = config.build.source_date_epoch
+    if epoch is not None:
+        validate_source_date_epoch(epoch, "source_date_epoch")
+        env["SOURCE_DATE_EPOCH"] = container_env["SOURCE_DATE_EPOCH"] = str(epoch)
+        warnings.append(
+            f"SOURCE_DATE_EPOCH was set to {epoch} for both builds. Timestamp differences are "
+            "suppressed by design, so a match shows the project reproduces with this value "
+            "pinned, not that it does without it."
+        )
     copy_options = {
         "include_vcs": config.workspace.include_vcs,
         "extra_excludes": config.workspace.exclude,
@@ -240,7 +252,7 @@ def verify_project(
         elif mode == "docker":
             assert image is not None
             rebuilt = _build_in_docker(
-                adapter, rebuild_dirs, config, image, timeout, pull_error, warnings
+                adapter, rebuild_dirs, config, image, timeout, pull_error, warnings, container_env
             )
         else:
             rebuilt = _build_locally("rebuilt", adapter, rebuild_dirs, config, env, timeout)
@@ -259,6 +271,8 @@ def verify_project(
                 copy_artifacts(rebuilt.artifacts, keep_artifacts_dir / "rebuilt")
 
     verdict, reasons = determine_verdict(comparison, original, rebuilt, builds_expected=True)
+    if verdict is Verdict.REPRODUCIBLE and epoch is not None:
+        reasons.append(f"SOURCE_DATE_EPOCH was fixed to {epoch} for both builds (see warnings).")
     if verdict is Verdict.REPRODUCIBLE and not isolation.independent_environment:
         reasons.append(
             "Both builds ran on this host, so this does not demonstrate reproducibility across "
