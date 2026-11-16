@@ -1,4 +1,4 @@
-# GhostBuild
+# GhostBuild [![SecretShield](https://github.com/localghosters/ghostbuild/actions/workflows/secretshield.yml/badge.svg)](https://github.com/localghosters/ghostbuild/actions/workflows/secretshield.yml)
 
 **Build it twice. Know what changed.**
 
