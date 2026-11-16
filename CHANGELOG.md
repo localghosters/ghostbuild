@@ -4,6 +4,17 @@ All notable changes are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Test suite: zip fixtures now set the Unix creator explicitly, so permission tests behave
+  the same on Windows; two metadata tests no longer pass vacuously on empty results.
+- pytest now imports the source tree (`pythonpath`), so a previously installed copy of
+  GhostBuild can never be tested by accident.
+
+### Changed
+- Python 3.14 added to the CI matrix and package classifiers (the suite passes on 3.14).
+
 ## [0.3.0] - 2026-11-16
 
 ### Added

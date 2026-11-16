@@ -205,6 +205,7 @@ def _zip_with_mode(path, files, mode):
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
         for name, content in files.items():
             info = zipfile.ZipInfo(name, date_time=(2020, 1, 1, 0, 0, 0))
+            info.create_system = 3  # Unix; zipfile defaults to MS-DOS on Windows, which hides mode bits
             info.external_attr = mode << 16
             archive.writestr(info, content)
     return path
@@ -237,6 +238,7 @@ def test_permission_difference_produces_hedged_mode_hypothesis(tmp_path):
     b = artifact(_zip_with_mode(tmp_path / "b" / "p.whl", WHEEL_FILES, 0o755))
     art = compare_artifact_sets([a], [b]).artifacts[0]
     assert art.status is ArtifactStatus.DIFFERENT
+    assert art.file_differences  # guard: all() below would pass vacuously on an empty list
     assert all("mode" in d.metadata_changes for d in art.file_differences)
     mode_hypothesis = next(h for h in art.hypotheses if "permissions" in h)
     assert "may" in mode_hypothesis
@@ -269,6 +271,7 @@ def test_owner_difference_produces_hedged_ownership_hypothesis(tmp_path):
     b = artifact(_targz_with_owner(tmp_path / "b" / "pkg-1.0.tar.gz", files, "builder"))
     art = compare_artifact_sets([a], [b]).artifacts[0]
     assert art.status is ArtifactStatus.DIFFERENT
+    assert art.file_differences
     assert all("owner" in d.metadata_changes for d in art.file_differences)
     owner_hypothesis = next(h for h in art.hypotheses if "ownership" in h)
     assert "may" in owner_hypothesis

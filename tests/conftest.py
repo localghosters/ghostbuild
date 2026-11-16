@@ -35,6 +35,7 @@ def make_zip(
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
         for name, content in files.items():
             info = zipfile.ZipInfo(name, date_time=date_time)
+            info.create_system = 3  # Unix; zipfile defaults to MS-DOS on Windows, which hides mode bits
             info.external_attr = 0o644 << 16
             archive.writestr(info, content)
     return path
