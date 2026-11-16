@@ -18,7 +18,7 @@ else:  # pragma: no cover - exercised only on Python 3.10
 
 CONFIG_FILENAME = "ghostbuild.toml"
 SUPPORTED_POLICIES = ("exact",)
-REPORT_FORMATS = ("terminal", "json", "html")
+REPORT_FORMATS = ("terminal", "json", "html", "markdown")
 
 EXAMPLE_CONFIG = """\
 # GhostBuild configuration. Every setting is optional; the values below are the defaults.
@@ -36,7 +36,7 @@ env_passthrough = []
 patterns = ["*.whl", "*.tar.gz"]
 
 [comparison]
-# Only "exact" (SHA-256 of every artifact) is implemented in 0.1.0.
+# Only "exact" (SHA-256 of every artifact) is implemented.
 policy = "exact"
 
 [workspace]
@@ -51,7 +51,7 @@ exclude = []
 
 [report]
 output_dir = "ghostbuild-results"
-# "terminal", "json" or "html". result.json is always written.
+# "terminal", "json", "html" or "markdown". result.json is always written.
 format = "terminal"
 
 [python]

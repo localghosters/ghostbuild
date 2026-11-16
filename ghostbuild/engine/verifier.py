@@ -196,7 +196,7 @@ def verify_project(
 
     if mode == "docker" and adapter.has_custom_build_command(config):
         raise IsolationError(
-            "A custom build_command is only supported with local isolation in 0.1.0; "
+            "A custom build_command is only supported with local isolation; "
             "remove it or use --isolation local."
         )
     problems = adapter.missing_prerequisites(config)

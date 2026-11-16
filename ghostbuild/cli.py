@@ -32,6 +32,7 @@ from ghostbuild.errors import GhostBuildError, LocalFallbackNotApproved, PathErr
 from ghostbuild.models import VerificationResult, to_plain
 from ghostbuild.reports import json_report
 from ghostbuild.reports.html_report import write_html
+from ghostbuild.reports.markdown_report import render_markdown, write_markdown
 from ghostbuild.reports.terminal import render_banner, render_result, render_scan
 from ghostbuild.utils.filesystem import validate_directory
 
@@ -185,7 +186,7 @@ def verify(
     output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Directory for reports.")] = None,
     fmt: Annotated[
         Optional[str],
-        typer.Option("--format", "-f", help="Output format: terminal, json or html."),
+        typer.Option("--format", "-f", help="Output format: terminal, json, html or markdown."),
     ] = None,
     keep_artifacts: Annotated[
         bool, typer.Option("--keep-artifacts", help="Keep both builds' artifacts in the output directory.")
@@ -273,10 +274,14 @@ def _emit(
     data = result.to_dict()
     if fmt == "json":
         typer.echo(json_report.to_json(data), nl=False)
+    elif fmt == "markdown":
+        typer.echo(render_markdown(data), nl=False)
     else:
         render_result(out, data, verbose)
     if fmt == "html":
         err.print(Text(f"HTML report saved to: {write_html(data, output_dir)}"))
+    if fmt == "markdown":
+        err.print(Text(f"Markdown report saved to: {write_markdown(data, output_dir)}"))
     err.print(Text(f"Report saved to: {saved.parent}/"))
 
 
@@ -288,7 +293,7 @@ def compare(
         Optional[list[str]], typer.Option("--pattern", "-p", help="Artifact glob (repeatable).")
     ] = None,
     output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Write reports to this directory.")] = None,
-    fmt: Annotated[Optional[str], typer.Option("--format", "-f", help="terminal, json or html.")] = None,
+    fmt: Annotated[Optional[str], typer.Option("--format", "-f", help="terminal, json, html or markdown.")] = None,
     config_path: ConfigOption = None,
     verbose: VerboseOption = False,
     no_color: NoColorOption = False,
@@ -310,6 +315,8 @@ def compare(
             data = result.to_dict()
             if fmt == "json":
                 typer.echo(json_report.to_json(data), nl=False)
+            elif fmt == "markdown":
+                typer.echo(render_markdown(data), nl=False)
             else:
                 render_result(out, data, verbose)
     raise typer.Exit(_VERDICT_EXIT[result.verdict.value])
@@ -320,7 +327,7 @@ def report(
     path: Annotated[Path, typer.Argument(help="A result.json file or a directory containing one.")] = Path(
         "ghostbuild-results"
     ),
-    fmt: Annotated[str, typer.Option("--format", "-f", help="terminal, json or html.")] = "terminal",
+    fmt: Annotated[str, typer.Option("--format", "-f", help="terminal, json, html or markdown.")] = "terminal",
     output: Annotated[
         Optional[Path], typer.Option("--output", "-o", help="Directory to write an HTML report to.")
     ] = None,
@@ -337,5 +344,9 @@ def report(
         elif fmt == "html":
             target = output or (path if path.is_dir() else path.parent)
             err.print(Text(f"HTML report saved to: {write_html(data, target.resolve())}"))
+        elif fmt == "markdown":
+            typer.echo(render_markdown(data), nl=False)
+            if output is not None:
+                err.print(Text(f"Markdown report saved to: {write_markdown(data, output.resolve())}"))
         else:
             render_result(out, data, verbose)

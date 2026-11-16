@@ -25,7 +25,7 @@ requirements from the network inside the container.
 
 ## Planned, not implemented
 
-Nothing below exists in 0.1.0. They are listed so contributors know the intended direction.
+Nothing below is implemented. They are listed so contributors know the intended direction.
 
 - Node.js
 - Rust / Cargo

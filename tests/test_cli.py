@@ -134,3 +134,22 @@ def test_init_writes_config_and_refuses_overwrite(tmp_path):
     assert invoke("init", str(target)).exit_code == 0 and target.is_file()
     assert invoke("init", str(target)).exit_code == cli.EXIT_ERROR
     assert invoke("init", str(target), "--force").exit_code == 0
+
+
+def test_compare_markdown_prints_report_and_needs_no_output_dir(tmp_path):
+    a, b = tmp_path / "a", tmp_path / "b"
+    a.mkdir(), b.mkdir()
+    differing_artifacts(1, a), differing_artifacts(2, b)
+    result = runner.invoke(cli.app, ["compare", str(a), str(b), "--format", "markdown"])
+    assert result.exit_code == cli.EXIT_NON_REPRODUCIBLE
+    assert result.stdout.startswith("# GhostBuild: NON-REPRODUCIBLE")
+
+
+def test_report_markdown_can_write_a_file(tmp_path):
+    a, b, out = tmp_path / "a", tmp_path / "b", tmp_path / "out"
+    a.mkdir(), b.mkdir()
+    differing_artifacts(1, a), differing_artifacts(2, b)
+    invoke("compare", str(a), str(b), "--output", str(out))
+    shown = invoke("report", str(out), "--format", "markdown", "--output", str(out))
+    assert shown.exit_code == 0 and "# GhostBuild" in shown.output
+    assert (out / "report.md").is_file()

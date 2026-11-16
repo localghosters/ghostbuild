@@ -6,7 +6,7 @@ GhostBuild is a local-first command-line tool that independently rebuilds a soft
 project and compares the resulting artifacts, so you can see whether your build is
 reproducible and, if not, which files differ.
 
-> **Status: 0.1.0, early.** Only Python projects are supported. Not yet published on PyPI.
+> **Status: 0.2.0, early.** Only Python projects are supported. Not yet published on PyPI.
 
 ## Why it exists
 
@@ -23,7 +23,7 @@ GhostBuild automates the "build it again and compare" step and explains differen
 3. Build the project in a temporary copy (the original build).
 4. Build a second, fresh copy in Docker (preferred) or, if you approve, on the same host.
 5. Compare artifacts by exact SHA-256 and inspect wheel/sdist members for the cause of any difference.
-6. Print a report and write `result.json` (and optionally `report.html`).
+6. Print a report and write `result.json` (and optionally `report.html` or `report.md`).
 
 Verdicts:
 
@@ -37,7 +37,7 @@ Verdicts:
 - Wheel and sdist artifacts, compared by SHA-256.
 - For differing archives: per-member differences, timestamp/mode metadata, wheel `WHEEL`/`METADATA` fields, and hypotheses clearly labelled as unconfirmed.
 - Docker isolation, with a same-host fallback that needs explicit approval and is labelled in every report.
-- Terminal, JSON and self-contained HTML reports.
+- Terminal, JSON, Markdown and self-contained HTML reports.
 - Optional `ghostbuild.toml`. No accounts, no API keys, no telemetry.
 
 ## Installation
@@ -66,6 +66,7 @@ ghostbuild scan ./my-project          # inspect only, runs nothing
 ghostbuild verify ./my-project        # asks before running the build
 ghostbuild verify ./my-project --format html --output ./results
 ghostbuild compare ./build-one ./build-two
+ghostbuild compare ./build-one ./build-two --format markdown >> "$GITHUB_STEP_SUMMARY"
 ghostbuild report ./ghostbuild-results/
 ```
 
@@ -75,7 +76,7 @@ ghostbuild report ./ghostbuild-results/
 | --- | --- |
 | `ghostbuild` | Banner, version and examples. |
 | `ghostbuild scan [DIR]` | Show name, version, build system, config files, build requirements, available tools. Never builds. |
-| `ghostbuild verify [DIR]` | Full workflow. Options: `--output`, `--format terminal\|json\|html`, `--keep-artifacts`, `--isolation auto\|docker\|local`, `--yes`, `--timeout`, `--config`, `--verbose`, `--no-color`. |
+| `ghostbuild verify [DIR]` | Full workflow. Options: `--output`, `--format terminal\|json\|html\|markdown`, `--keep-artifacts`, `--isolation auto\|docker\|local`, `--yes`, `--timeout`, `--config`, `--verbose`, `--no-color`. |
 | `ghostbuild compare A B` | Compare two existing artifact directories. Runs no builds. |
 | `ghostbuild report [PATH]` | Display or regenerate a report from a stored `result.json`. |
 | `ghostbuild init [PATH]` | Write an example `ghostbuild.toml`. |
@@ -152,6 +153,11 @@ python -m build
 
 Tests never run real project builds; subprocesses and Docker are faked. See
 [docs/architecture.md](docs/architecture.md).
+
+## More documentation
+
+[FAQ](docs/faq.md), [CI usage](docs/ci-usage.md), [JSON format](docs/json-schema.md),
+[roadmap](docs/roadmap.md) and [security policy](SECURITY.md).
 
 ## Contributing
 

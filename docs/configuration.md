@@ -21,7 +21,7 @@ Unknown keys and invalid values are reported as errors rather than ignored.
 | `[workspace]` | `include_vcs` | `false` | Copy `.git`, `.hg`, `.svn` into workspaces (needed by tools like setuptools-scm). |
 | `[workspace]` | `exclude` | `[]` | Extra name patterns left out of workspaces. |
 | `[report]` | `output_dir` | `"ghostbuild-results"` | Where reports are written. |
-| `[report]` | `format` | `"terminal"` | `terminal`, `json` or `html`. `result.json` is always written by `verify`. |
+| `[report]` | `format` | `"terminal"` | `terminal`, `json`, `html` or `markdown`. `result.json` is always written by `verify`. |
 | `[python]` | `build_command` | `[]` | Override the build command (local isolation only). Placeholders: `{python}`, `{source_dir}`, `{outdir}`. |
 | `[python]` | `docker_image` | `""` | Image for the Docker rebuild; empty means `python:<major>.<minor>-slim`. |
 | `[python]` | `build_requirement` | `"build"` | Requirement installed in the container to provide the build frontend. |

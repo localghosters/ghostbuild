@@ -45,4 +45,14 @@ jobs:
           path: ghostbuild-results/
 ```
 
+## Job summary
+
+`--format markdown` prints a Markdown report to standard output, so it can be appended to
+the GitHub job summary. The report is written to `report.md` as well. It includes the
+verdict, an artifact table, differing files and hypotheses, but not build logs.
+
+```bash
+ghostbuild verify . --yes --isolation docker --format markdown >> "$GITHUB_STEP_SUMMARY"
+```
+
 `result.json` is always written by `verify` and follows [the documented schema](json-schema.md).

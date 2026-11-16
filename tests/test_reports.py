@@ -131,3 +131,68 @@ def test_terminal_report_renders(differing):
     text = console.export_text()
     assert "RESULT: NON-REPRODUCIBLE" in text
     assert "pkg-1.0-py3-none-any.whl" in text
+
+
+# --- Markdown report -------------------------------------------------------------------
+
+from ghostbuild.reports.markdown_report import REPORT_FILENAME as MD_FILENAME  # noqa: E402
+from ghostbuild.reports.markdown_report import render_markdown, write_markdown  # noqa: E402
+
+
+def test_markdown_reports_verdict_and_artifacts(differing):
+    text = render_markdown(differing.to_dict())
+    assert text.startswith("# GhostBuild: NON-REPRODUCIBLE")
+    assert "| `pkg-1.0-py3-none-any.whl` | different |" in text
+    assert "hypotheses, not confirmed" in text
+    assert "depend on the environments and comparison policy" in text
+
+
+def test_markdown_matching_run_has_no_detail_sections(matching):
+    text = render_markdown(matching.to_dict())
+    assert text.startswith("# GhostBuild: REPRODUCIBLE")
+    assert "###" not in text
+
+
+def test_markdown_never_hides_the_same_host_qualifier():
+    data = {"verdict": "reproducible", "isolation": {"independent_environment": False,
+            "mode": "local", "description": "local rebuild"}, "comparison": {"summary": {}, "artifacts": []}}
+    assert "same-host check only" in render_markdown(data)
+
+
+def test_markdown_escapes_untrusted_text(matching):
+    data = matching.to_dict()
+    data["warnings"] = ["<img src=x onerror=alert(1)> [link](http://evil) *bold*"]
+    data["comparison"]["artifacts"][0]["name"] = "a|b`c.whl"
+    text = render_markdown(data)
+    import re
+
+    assert not re.search(r"(?<!\\)<img", text)  # no unescaped tag
+    assert not re.search(r"(?<!\\)\]\(", text)  # no live link syntax
+    assert "\\<img" in text and "\\[link\\]" in text
+    row = next(line for line in text.splitlines() if "a\\|b" in line)
+    assert row.startswith("| ``a\\|b`c.whl``")
+
+
+def test_markdown_diff_fence_cannot_be_closed_by_content(differing):
+    data = differing.to_dict()
+    art = next(a for a in data["comparison"]["artifacts"] if a["file_differences"])
+    art["file_differences"][0]["diff_excerpt"] = ["+```", "+# injected heading"]
+    text = render_markdown(data)
+    assert "````\n+```\n+# injected heading\n````" in text
+
+
+def test_markdown_truncates_long_file_lists(differing):
+    data = differing.to_dict()
+    art = next(a for a in data["comparison"]["artifacts"] if a["file_differences"])
+    art["file_differences"] = [
+        {"path": f"f{i}.py", "change": "content", "metadata_changes": [], "diff_excerpt": []}
+        for i in range(40)
+    ]
+    text = render_markdown(data)
+    assert "`f24.py`" in text and "`f25.py`" not in text
+    assert "and 15 more (see result.json)" in text
+
+
+def test_write_markdown(matching, tmp_path):
+    path = write_markdown(matching.to_dict(), tmp_path / "out")
+    assert path.name == MD_FILENAME and path.read_text(encoding="utf-8").startswith("# GhostBuild")

@@ -15,7 +15,7 @@ cli.py ──► detection.py ──► adapters/ (inspect, build command)
               └─ engine/comparator.py  exact comparison, diagnostics, verdict
                          │
                          ▼
-              VerificationResult ──► reports/ (terminal, json_report, html_report)
+              VerificationResult ──► reports/ (terminal, json_report, html_report, markdown_report)
 ```
 
 ## Verification workflow

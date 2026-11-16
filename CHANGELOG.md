@@ -4,12 +4,20 @@ All notable changes are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] - 2026-11-16
 
 ### Added
+- Markdown report (`--format markdown`, `report.md`) for CI step summaries and pull
+  request comments. Names, diffs and messages are escaped so archive contents cannot
+  inject Markdown or HTML. Build logs are not included; use HTML or JSON for those.
+- `SECURITY.md`, `.editorconfig`, Dependabot configuration, an FAQ, a CI usage guide
+  and a roadmap.
 - Comparison diagnostics: when every archive member has identical content and only
   metadata differs, the report now says so (and that it is still not an exact match).
 - Hedged hypotheses for differing file permissions and file ownership in archives.
+
+### Changed
+- Removed hard-coded version numbers from user-facing messages and config comments.
 
 ## [0.1.0] - 2026-11-12
 

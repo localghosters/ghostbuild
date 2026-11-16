@@ -196,10 +196,10 @@ def test_build_env_rejects_invalid_passthrough_names():
 
 
 def test_redaction_removes_secret_values_and_url_credentials():
-    environ = {"MY_TOKEN": "s3cr3t-value-123", "PATH": "/usr/bin", "SHORT_SECRET": "ab"} # secretshield:ignore
-    text = "token=s3cr3t-value-123 index https://user:hunter2@pypi.example/simple path /usr/bin ab" # secretshield:ignore
+    environ = {"MY_TOKEN": "s3cr3t-value-123", "PATH": "/usr/bin", "SHORT_SECRET": "ab"}
+    text = "token=s3cr3t-value-123 index https://user:hunter2@pypi.example/simple path /usr/bin ab"
     cleaned = redact_secrets(text, environ)
-    assert "s3cr3t-value-123" not in cleaned and "hunter2" not in cleaned 
+    assert "s3cr3t-value-123" not in cleaned and "hunter2" not in cleaned
     assert "/usr/bin" in cleaned and "pypi.example" in cleaned
 
 

@@ -13,7 +13,7 @@ env_passthrough = []
 patterns = ["*.whl", "*.tar.gz"]
 
 [comparison]
-# Only "exact" (SHA-256 of every artifact) is implemented in 0.1.0.
+# Only "exact" (SHA-256 of every artifact) is implemented.
 policy = "exact"
 
 [workspace]
@@ -28,7 +28,7 @@ exclude = []
 
 [report]
 output_dir = "ghostbuild-results"
-# "terminal", "json" or "html". result.json is always written.
+# "terminal", "json", "html" or "markdown". result.json is always written.
 format = "terminal"
 
 [python]
