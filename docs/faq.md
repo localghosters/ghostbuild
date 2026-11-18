@@ -27,7 +27,7 @@ No. The project directory is only read. Builds run in temporary copies.
 
 ## Can I ignore timestamps and still call it reproducible?
 
-Not in 0.1.0. Only the exact policy exists. If a normalised policy is added later, its
+Not currently. Only the exact policy exists. If a normalised policy is added later, its
 results will be reported separately and never presented as an exact match.
 
 ## Which projects are supported?
